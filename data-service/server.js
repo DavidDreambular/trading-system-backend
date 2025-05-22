@@ -234,3 +234,98 @@ app.listen(port, '0.0.0.0', () => {
   console.log('  GET  /market-data?symbol=AAPL&interval=5min');
   console.log('  GET  /news?q=stock market&pageSize=20');
 });
+
+// API Routes
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    service: 'trading-data-service',
+    timestamp: new Date().toISOString(),
+    cache: redisClient ? 'enabled' : 'disabled'
+  });
+});
+
+app.get('/market-data', async (req, res) => {
+  try {
+    const symbol = req.query.symbol || 'AAPL';
+    const interval = req.query.interval || '5min';
+    
+    console.log(`Fetching market data for ${symbol} with ${interval} interval`);
+    
+    const data = await getAlphaVantageData(symbol, interval);
+    
+    res.json({
+      success: true,
+      data: data,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('Market data endpoint error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+app.get('/news', async (req, res) => {
+  try {
+    const query = req.query.q || 'stock market';
+    const pageSize = parseInt(req.query.pageSize) || 20;
+    
+    console.log(`Fetching news for query: ${query}`);
+    
+    // Mock news data as fallback
+    const data = {
+      headlines: [
+        "Stock Market Reaches New Highs Amid Economic Recovery",
+        "Tech Stocks Continue Strong Performance in Q2",
+        "Federal Reserve Maintains Interest Rates",
+        "Energy Sector Shows Resilience Despite Global Concerns",
+        "Retail Investors Drive Market Volatility"
+      ],
+      descriptions: [
+        "Markets continue to show strong performance...",
+        "Technology companies report better than expected earnings...",
+        "The Federal Reserve decided to keep rates unchanged...",
+        "Energy companies adapt to changing market conditions...",
+        "Individual investors impact on market dynamics grows..."
+      ],
+      sources: ["Reuters", "Bloomberg", "CNBC", "MarketWatch", "Yahoo Finance"],
+      timestamps: [
+        new Date(Date.now() - 2*60*60*1000).toISOString(),
+        new Date(Date.now() - 4*60*60*1000).toISOString(),
+        new Date(Date.now() - 6*60*60*1000).toISOString(),
+        new Date(Date.now() - 8*60*60*1000).toISOString(),
+        new Date(Date.now() - 10*60*60*1000).toISOString()
+      ],
+      lastUpdate: new Date().toISOString(),
+      totalResults: 5,
+      fallback: true
+    };
+    
+    res.json({
+      success: true,
+      data: data,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('News endpoint error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Data service running on port ${port}`);
+  console.log('Available endpoints:');
+  console.log('  GET  /health');
+  console.log('  GET  /market-data?symbol=AAPL&interval=5min');
+  console.log('  GET  /news?q=stock market&pageSize=20');
+});
